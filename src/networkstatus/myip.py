@@ -19,6 +19,12 @@ import argparse
 import sys
 import logging
 
+import fcntl
+import struct
+import sys
+from socket import *
+
+
 from networkstatus import __version__
 
 __author__ = "Chris Fleming"
@@ -28,7 +34,7 @@ __license__ = "mit"
 _logger = logging.getLogger(__name__)
 
 
-def fib(n):
+def myip(n):
     """Fibonacci example function
 
     Args:
@@ -37,11 +43,26 @@ def fib(n):
     Returns:
       int: n-th Fibonacci number
     """
-    assert n > 0
-    a, b = 1, 1
-    for i in range(n-1):
-        a, b = b, a+b
-    return a
+
+    # Set some symbolic constants
+    SIOCGIFFLAGS = 0x8913
+    null256 = '\0'*256
+
+    # Get the interface name from the command line
+    ifname = "wifi0"
+
+    # Create a socket so we have a handle to query
+    s = socket(AF_INET, SOCK_DGRAM)
+
+    # Call ioctl()   to get the flags for the given interface
+    result = fcntl.ioctl(s.fileno(), SIOCGIFFLAGS, ifname + null256)
+
+    # Extract the interface's flags from the return value
+    flags, = struct.unpack('H', result[16:18])
+
+    # Check UP"" bit and print a message
+    up = flags & 1
+    print(('DOWN', 'UP')[up])
 
 
 def parse_args(args):
